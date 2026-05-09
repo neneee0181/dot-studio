@@ -8,9 +8,9 @@
  *   Back button returns to main card view.
  */
 import { useState } from 'react'
-import { ArrowLeft, ChevronLeft, Cpu, Hexagon, Server, Zap } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, Cpu, Hexagon, Server, Sparkles, Zap } from 'lucide-react'
 
-import { unresolvedDeclaredMcpServerNames } from '../../lib/performers'
+import { autoModelSelection, isAutoModelSelection, unresolvedDeclaredMcpServerNames } from '../../lib/performers'
 import type { PerformerNode, ModelConfig, AssetRef, McpServer } from '../../types'
 
 import PerformerComposeCards from './PerformerComposeCards'
@@ -101,8 +101,9 @@ export default function PerformerEditPanel({
         ? `${presentation.danceAssets.length} dance${presentation.danceAssets.length !== 1 ? 's' : ''}`
         : 'Drag & drop or click to add'
     const modelDesc = performer?.model
-        ? `${performer.model.modelId}`
+        ? isAutoModelSelection(performer.model) ? 'Auto' : `${performer.model.modelId}`
         : 'Drag & drop or click to select'
+    const modelIsAuto = isAutoModelSelection(performer?.model)
     const mcpDesc = presentation.mcpServers.length > 0
         ? `${presentation.mcpServers.length} server${presentation.mcpServers.length !== 1 ? 's' : ''}`
         : 'Drag & drop or click to add'
@@ -199,6 +200,20 @@ export default function PerformerEditPanel({
                                 isOver: dropRefs.model.isOver,
                                 setNodeRef: dropRefs.model.setNodeRef,
                                 onClick: () => setDetailView('model'),
+                                action: !modelIsAuto ? (
+                                    <button
+                                        type="button"
+                                        className="icon-btn"
+                                        title="Use Auto model selection"
+                                        aria-label="Use Auto model selection"
+                                        onClick={(event) => {
+                                            event.stopPropagation()
+                                            onModelChange(autoModelSelection())
+                                        }}
+                                    >
+                                        <Sparkles size={12} />
+                                    </button>
+                                ) : null,
                             },
                             {
                                 key: 'mcp',

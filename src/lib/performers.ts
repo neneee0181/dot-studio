@@ -29,7 +29,9 @@ export {
 
 export {
     modelConfigFromAssetValue,
+    autoModelSelection,
     hasModelConfig,
+    isAutoModelSelection,
     resolveImportedModel,
     normalizeAssetModelForStudio,
     normalizeAssetMcpForStudio,

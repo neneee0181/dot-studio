@@ -1,6 +1,7 @@
-import { Hexagon, Zap, Pencil, X, Server } from 'lucide-react'
+import { Hexagon, Zap, Pencil, X, Server, Sparkles } from 'lucide-react'
 import type { AssetRef, ModelConfig, PerformerNode } from '../../types'
 import { assetUrnDisplayName } from '../../lib/asset-urn'
+import { autoModelSelection, isAutoModelSelection } from '../../lib/performers'
 import ModelVariantSelect from './ModelVariantSelect'
 
 function assetRefLabel(ref: AssetRef) {
@@ -118,20 +119,31 @@ export function PerformerModelDetail({
     onModelChange: (model: ModelConfig | null) => void
     onModelVariantChange: (variant: string | null) => void
 }) {
+    const isAutoModel = isAutoModelSelection(performer?.model)
+
     return (
         <div className="edit-advanced nodrag nowheel">
             <div className="adv-section">
                 <div className="adv-section__head">
                     <span className="section-title">Model</span>
-                    {performer?.model ? (
-                        <button type="button" className="btn btn--sm" onClick={() => onModelChange(null)}>
-                            Clear
-                        </button>
-                    ) : null}
+                    <div className="adv-list__actions">
+                        {!isAutoModel ? (
+                            <button type="button" className="btn btn--sm" onClick={() => onModelChange(autoModelSelection())}>
+                                <Sparkles size={10} /> Auto
+                            </button>
+                        ) : null}
+                        {performer?.model ? (
+                            <button type="button" className="btn btn--sm" onClick={() => onModelChange(null)}>
+                                Clear
+                            </button>
+                        ) : null}
+                    </div>
                 </div>
                 <div className="adv-section__body">
                     <span className="adv-section__summary">
-                        {performer?.model
+                        {isAutoModel
+                            ? 'Auto · Studio picks a connected model for each request'
+                            : performer?.model
                             ? `${performer.model.provider} / ${performer.model.modelId}`
                             : performer?.modelPlaceholder
                                 ? 'No model selected'
@@ -144,7 +156,7 @@ export function PerformerModelDetail({
                     )}
                 </div>
             </div>
-            {performer?.model ? (
+            {performer?.model && !isAutoModel ? (
                 <div className="adv-section">
                     <div className="adv-section__head">
                         <span className="section-title">Variant</span>

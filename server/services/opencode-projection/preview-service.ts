@@ -1,4 +1,7 @@
 import type { CompilePromptRequest } from '../../../shared/chat-contracts.js'
+import { isAutoModelSelection } from '../../../shared/model-auto.js'
+import { listRuntimeModels } from '../../lib/model-catalog.js'
+import { selectAutoRuntimeModel } from '../../lib/auto-model-selection.js'
 import { ensurePerformerProjection } from './stage-projection-service.js'
 
 export function getCompileRequestTargets(request: CompilePromptRequest) {
@@ -10,13 +13,20 @@ export async function compileProjectionPreview(
     request: CompilePromptRequest,
 ) {
     const posture = request.planMode ? 'plan' : 'build'
+    const model = isAutoModelSelection(request.model)
+        ? selectAutoRuntimeModel({
+            message: '',
+            models: await listRuntimeModels(cwd),
+            requiresToolCall: (request.mcpServerNames || []).length > 0,
+        })
+        : request.model
     const ensured = await ensurePerformerProjection({
         performerId: request.performerId || 'preview',
         performerName: request.performerName || 'Preview',
         talRef: request.talRef,
         danceRefs: request.danceRefs,
-        model: request.model,
-        modelVariant: request.modelVariant || null,
+        model,
+        modelVariant: isAutoModelSelection(request.model) ? null : request.modelVariant || null,
         mcpServerNames: request.mcpServerNames || [],
         workingDir: cwd,
         requestTargets: getCompileRequestTargets(request),

@@ -4,6 +4,9 @@ import {
     type ProjectionDirtyPatch,
 } from '../../../shared/projection-dirty.js'
 import type { ModelSelection } from '../../../shared/model-types.js'
+import { isAutoModelSelection } from '../../../shared/model-auto.js'
+import { listRuntimeModels } from '../../lib/model-catalog.js'
+import { selectAutoRuntimeModel } from '../../lib/auto-model-selection.js'
 import {
     listWorkspacePerformersForDir,
     type WorkspacePerformerSnapshot,
@@ -26,11 +29,31 @@ export type ProjectionExecutionPlan = {
     inputs: PerformerProjectionInput[]
 }
 
-function performerToProjectionInput(
+async function resolveProjectionModel(
+    workingDir: string,
+    model: NonNullable<ModelSelection>,
+    mcpServerNames: string[],
+): Promise<ModelSelection> {
+    if (!isAutoModelSelection(model)) {
+        return model
+    }
+    return selectAutoRuntimeModel({
+        message: '',
+        models: await listRuntimeModels(workingDir),
+        requiresToolCall: mcpServerNames.length > 0,
+    })
+}
+
+async function performerToProjectionInput(
     performer: WorkspacePerformerSnapshot,
     workingDir: string,
-): PerformerProjectionInput | null {
+): Promise<PerformerProjectionInput | null> {
     if (!performer.model) {
+        return null
+    }
+    const mcpServerNames = performer.mcpServerNames || []
+    const model = await resolveProjectionModel(workingDir, performer.model, mcpServerNames)
+    if (!model) {
         return null
     }
 
@@ -39,9 +62,9 @@ function performerToProjectionInput(
         performerName: performer.name,
         talRef: performer.talRef || null,
         danceRefs: performer.danceRefs || [],
-        model: performer.model,
+        model,
         modelVariant: performer.modelVariant || null,
-        mcpServerNames: performer.mcpServerNames || [],
+        mcpServerNames,
         workingDir,
         scope: 'workspace',
     }
@@ -82,7 +105,7 @@ export async function buildProjectionExecutionPlan(input: {
         if (inputs.has(performer.id)) {
             continue
         }
-        const projectionInput = performerToProjectionInput(performer, input.workingDir)
+        const projectionInput = await performerToProjectionInput(performer, input.workingDir)
         if (!projectionInput) {
             continue
         }

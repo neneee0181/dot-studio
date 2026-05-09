@@ -95,6 +95,7 @@
 }
 
 .edit-card-shell {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -115,6 +116,8 @@
     color: inherit;
     text-align: left;
     cursor: pointer;
+    width: 100%;
+    padding-right: 30px;
 }
 
 .edit-card-shell:hover,
@@ -166,6 +169,15 @@
     line-height: 1.45;
     color: var(--text-secondary);
     word-break: break-word;
+}
+
+.edit-card__action {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .edit-card__stack {

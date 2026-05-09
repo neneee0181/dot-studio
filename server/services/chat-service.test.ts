@@ -17,6 +17,7 @@ const countRunningSessionsMock = vi.fn()
 const publishProjectionConsumedMock = vi.fn()
 const listWorkspacePerformersForDirMock = vi.fn()
 const assertRuntimeModelPromptableMock = vi.fn()
+const listRuntimeModelsMock = vi.fn()
 
 vi.mock('../lib/opencode.js', () => ({
     getOpencode: async () => ({
@@ -31,6 +32,7 @@ vi.mock('../lib/opencode.js', () => ({
 
 vi.mock('../lib/model-catalog.js', () => ({
     assertRuntimeModelPromptable: assertRuntimeModelPromptableMock,
+    listRuntimeModels: listRuntimeModelsMock,
 }))
 
 vi.mock('./opencode-projection/stage-projection-service.js', () => ({
@@ -100,6 +102,7 @@ describe('sendStudioChatMessage', () => {
         publishProjectionConsumedMock.mockReset()
         listWorkspacePerformersForDirMock.mockReset().mockResolvedValue([])
         assertRuntimeModelPromptableMock.mockReset().mockResolvedValue(undefined)
+        listRuntimeModelsMock.mockReset().mockResolvedValue([])
         prepareAssistantChatRequestMock.mockReset().mockResolvedValue({
             assistantAgentName: 'dot-studio/studio-assistant',
             capabilitySnapshot: null,

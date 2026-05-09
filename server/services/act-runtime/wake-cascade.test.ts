@@ -14,6 +14,7 @@ const prepareRuntimeForExecution = vi.fn()
 const countRunningSessions = vi.fn()
 const ensurePerformerProjection = vi.fn()
 const assertRuntimeModelPromptable = vi.fn()
+const listRuntimeModels = vi.fn()
 
 vi.mock('../../lib/opencode.js', () => ({
     getOpencode: async () => ({
@@ -29,6 +30,7 @@ vi.mock('../../lib/opencode.js', () => ({
 
 vi.mock('../../lib/model-catalog.js', () => ({
     assertRuntimeModelPromptable,
+    listRuntimeModels,
 }))
 
 vi.mock('../../lib/chat-session.js', () => ({
@@ -111,6 +113,7 @@ describe('wake-cascade participant scheduling', () => {
         }))
         countRunningSessions.mockReset().mockResolvedValue({ runningSessions: 0 })
         assertRuntimeModelPromptable.mockReset().mockResolvedValue(undefined)
+        listRuntimeModels.mockReset().mockResolvedValue([])
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dot-studio-wake-cascade-'))
         resolveSessionExecutionContext.mockReset().mockResolvedValue({ workingDir: tempDir })
     })

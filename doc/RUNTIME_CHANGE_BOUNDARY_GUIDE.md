@@ -111,6 +111,7 @@ Every execution path should follow this order.
 - performer TAL content is inserted raw at the top of the projected agent body
 - do not add a synthetic `Core Instructions` heading
 - do not inject fallback instructions when no TAL is configured
+- auto model selection is resolved immediately before projection/prompt execution; the saved performer keeps the auto sentinel, but each turn passes the selected concrete provider/model to OpenCode
 - preview or prewarm may materialize projection files
 - preview or prewarm must not clear `projectionDirty`
 - files may exist in a `projection pending adoption` state until a later dispose

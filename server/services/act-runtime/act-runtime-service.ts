@@ -603,6 +603,9 @@ class ActRuntimeService {
         const { ensurePerformerProjection } = await import('../opencode-projection/stage-projection-service.js')
         const { resolvePerformerForWake } = await import('./wake-performer-resolver.js')
         const { ensureActToolFiles } = await import('./act-tool-files.js')
+        const { isAutoModelSelection } = await import('../../../shared/model-auto.js')
+        const { listRuntimeModels } = await import('../../lib/model-catalog.js')
+        const { selectAutoRuntimeModel } = await import('../../lib/auto-model-selection.js')
 
         for (const participantKey of Object.keys(actDefinition.participants || {})) {
             try {
@@ -614,14 +617,24 @@ class ActRuntimeService {
                 if (!performerConfig?.model) {
                     continue
                 }
+                const model = isAutoModelSelection(performerConfig.model)
+                    ? selectAutoRuntimeModel({
+                        message: '',
+                        models: await listRuntimeModels(this.workingDir),
+                        requiresToolCall: true,
+                    })
+                    : performerConfig.model
+                if (!model) {
+                    continue
+                }
 
                 await ensurePerformerProjection({
                     performerId: performerConfig.performerId,
                     performerName: performerConfig.performerName,
                     talRef: performerConfig.talRef,
                     danceRefs: performerConfig.danceRefs,
-                    model: performerConfig.model,
-                    modelVariant: performerConfig.modelVariant,
+                    model,
+                    modelVariant: isAutoModelSelection(performerConfig.model) ? null : performerConfig.modelVariant,
                     mcpServerNames: performerConfig.mcpServerNames,
                     workingDir: this.workingDir,
                 })

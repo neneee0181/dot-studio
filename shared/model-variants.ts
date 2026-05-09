@@ -16,6 +16,10 @@ export type RuntimeModelCatalogEntry = {
     reasoning: boolean
     attachment: boolean
     temperature: boolean
+    cost?: {
+        input?: number
+        output?: number
+    }
     modalities: {
         input: string[]
         output: string[]

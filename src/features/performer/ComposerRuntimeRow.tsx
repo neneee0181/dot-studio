@@ -1,5 +1,6 @@
 import { Hammer, Lightbulb } from 'lucide-react'
 import type { PerformerNode } from '../../types'
+import { isAutoModelSelection } from '../../lib/performers'
 import ModelVariantSelect from './ModelVariantSelect'
 
 interface ComposerRuntimeRowProps {
@@ -24,6 +25,7 @@ export default function ComposerRuntimeRow({
     showModeToggle = true,
 }: ComposerRuntimeRowProps) {
     const isPlanAgent = selectedAgentId === 'plan'
+    const isAutoModel = isAutoModelSelection(performer?.model)
 
     return (
         <div className="chat-input__runtime-row">
@@ -49,15 +51,17 @@ export default function ComposerRuntimeRow({
                     </button>
                 </div>
             ) : null}
-            <ModelVariantSelect
-                model={performer?.model || null}
-                value={performer?.modelVariant || null}
-                onChange={(value) => onSetModelVariant(performerId, value)}
-                className="chat-input__variant"
-                compact
-                titlePrefix="Performer variant"
-                popoverPlacement="top"
-            />
+            {!isAutoModel ? (
+                <ModelVariantSelect
+                    model={performer?.model || null}
+                    value={performer?.modelVariant || null}
+                    onChange={(value) => onSetModelVariant(performerId, value)}
+                    className="chat-input__variant"
+                    compact
+                    titlePrefix="Performer variant"
+                    popoverPlacement="top"
+                />
+            ) : null}
         </div>
     )
 }

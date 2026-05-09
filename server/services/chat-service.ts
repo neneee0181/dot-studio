@@ -2,7 +2,8 @@ import { getOpencode } from '../lib/opencode.js'
 import { buildStudioSessionTitle, deriveProvisionalThreadTitle } from '../../shared/session-metadata.js'
 import type { ChatSendRequest, ChatSessionCreateRequest } from '../../shared/chat-contracts.js'
 import { describeUnavailableRuntimeTools } from '../lib/runtime-tools.js'
-import { assertRuntimeModelPromptable } from '../lib/model-catalog.js'
+import { assertRuntimeModelPromptable, listRuntimeModels } from '../lib/model-catalog.js'
+import { selectAutoRuntimeModel } from '../lib/auto-model-selection.js'
 import { StudioValidationError, unwrapOpencodeResult } from '../lib/opencode-errors.js'
 import { retryOnAgentRegistryMiss } from '../lib/opencode-prompt.js'
 import { resolveActSessionPolicy } from '../lib/act-session-policy.js'
@@ -35,6 +36,7 @@ import {
 import { prepareAssistantChatRequest } from './studio-assistant/assistant-chat-service.js'
 import { buildTextPromptParts, joinPromptSections } from './turn-prompt-service.js'
 import { normalizeProjectionDirtyPatch } from '../../shared/projection-dirty.js'
+import { isAutoModelSelection } from '../../shared/model-auto.js'
 
 function isAssistantOwnerId(ownerId: string) {
     return ownerId === 'studio-assistant' || ownerId.startsWith('studio-assistant--')
@@ -95,6 +97,25 @@ export async function sendStudioChatMessage(
             'select_model',
         )
     }
+    const usesAutoModel = isAutoModelSelection(performer.model)
+    const effectiveModel = usesAutoModel
+        ? selectAutoRuntimeModel({
+            message: request.message,
+            models: await listRuntimeModels(workingDir),
+            requiresToolCall: !!request.actId || (performer.mcpServerNames || []).length > 0,
+            requiresAttachment: (request.attachments || []).length > 0,
+        })
+        : performer.model
+
+    if (!effectiveModel) {
+        throw new StudioValidationError(
+            usesAutoModel
+                ? 'Auto model could not find a connected model that can run this request. Connect a compatible provider model or choose a specific model.'
+                : 'Select a model for this performer before sending prompts.',
+            'select_model',
+        )
+    }
+    const effectiveModelVariant = usesAutoModel ? null : performer.modelVariant || null
 
     const actSessionOwner = request.actId
         ? parseActParticipantSessionOwner(performer.performerId)
@@ -154,12 +175,12 @@ export async function sendStudioChatMessage(
         unavailableDetails: [],
     }
 
-    await assertRuntimeModelPromptable(workingDir, performer.model!)
+    await assertRuntimeModelPromptable(workingDir, effectiveModel)
 
     if (isAssistant) {
         const prepared = await prepareAssistantChatRequest(workingDir, {
             message: request.message,
-            model: performer.model!,
+            model: effectiveModel,
             assistantContext: request.assistantContext || null,
         })
         assistantAgentName = prepared.assistantAgentName
@@ -174,8 +195,8 @@ export async function sendStudioChatMessage(
                 performerName: projectionPerformerName,
                 talRef: performer.talRef,
                 danceRefs: [...(performer.danceRefs || []), ...(performer.extraDanceRefs || [])],
-                model: performer.model!,
-                modelVariant: performer.modelVariant || null,
+                model: effectiveModel,
+                modelVariant: effectiveModelVariant,
                 mcpServerNames: performer.mcpServerNames || [],
                 workingDir,
             },
@@ -303,8 +324,8 @@ export async function sendStudioChatMessage(
                 // Pass model directly so OpenCode uses the user's selected model,
                 // not the (potentially stale) model cached from the agent file.
                 model: performer.model ? {
-                    providerID: performer.model.provider,
-                    modelID: performer.model.modelId,
+                    providerID: effectiveModel.provider,
+                    modelID: effectiveModel.modelId,
                 } : undefined,
                 system: joinPromptSections([
                     request.actId ? actSystemPrompt : '',
@@ -330,8 +351,8 @@ export async function sendStudioChatMessage(
                 threadId: request.actThreadId,
                 message: request.message,
                 model: {
-                    providerID: performer.model.provider,
-                    modelID: performer.model.modelId,
+                    providerID: effectiveModel.provider,
+                    modelID: effectiveModel.modelId,
                 },
                 provisionalTitle,
             }).catch((error) => {
@@ -343,8 +364,8 @@ export async function sendStudioChatMessage(
                 sessionId,
                 message: request.message,
                 model: {
-                    providerID: performer.model.provider,
-                    modelID: performer.model.modelId,
+                    providerID: effectiveModel.provider,
+                    modelID: effectiveModel.modelId,
                 },
                 provisionalTitle,
             }).catch((error) => {

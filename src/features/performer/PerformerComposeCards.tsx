@@ -19,6 +19,7 @@ export type PerformerComposeCard = {
     isOver?: boolean
     disabled?: boolean
     onClick?: () => void
+    action?: ReactNode
     setNodeRef?: (element: HTMLElement | null) => void
 }
 
@@ -54,6 +55,7 @@ export default function PerformerComposeCards({
                             {!card.items?.length ? <span>{card.description}</span> : null}
                         </span>
                     </button>
+                    {card.action ? <div className="edit-card__action">{card.action}</div> : null}
                     {card.items?.length ? (
                         <div className="edit-card__stack">
                             {card.items.map((item) => (

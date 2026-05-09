@@ -12,7 +12,7 @@ import {
     resolveActExpandedHeight,
 } from '../../lib/act-layout'
 import { assetUrnDisplayName } from '../../lib/asset-urn'
-import { hasModelConfig } from '../../lib/performers'
+import { hasModelConfig, isAutoModelSelection } from '../../lib/performers'
 
 type CanvasNodeKind = 'performer' | 'markdownEditor' | 'canvasTerminal' | 'act'
 
@@ -109,7 +109,9 @@ export function buildPerformerCanvasNodes(args: {
         })
     }
 
-    return performers.map((performer) => ({
+    return performers.map((performer) => {
+        const autoModel = isAutoModelSelection(performer.model)
+        return {
         id: performer.id,
         type: 'performer',
         position: performer.position,
@@ -127,8 +129,10 @@ export function buildPerformerCanvasNodes(args: {
             width: performer.width,
             height: performer.height,
             model: performer.model,
-            modelLabel: performer.model?.modelId || null,
-            modelTitle: performer.model ? `${performer.model.provider}/${performer.model.modelId}` : null,
+            modelLabel: autoModel ? 'Auto' : performer.model?.modelId || null,
+            modelTitle: autoModel
+                ? 'Auto model selection'
+                : performer.model ? `${performer.model.provider}/${performer.model.modelId}` : null,
             modelVariant: performer.modelVariant || null,
             agentId: performer.agentId || null,
             modelConfigured: hasModelConfig(performer.model),
@@ -145,7 +149,8 @@ export function buildPerformerCanvasNodes(args: {
             actEditDimmed: !!editingAct && !isPerformerInEditingAct(performer),
         } as Record<string, unknown>,
         style: { width: performer.width || 400, height: performer.height || 500 },
-    })) satisfies Node[]
+        }
+    }) satisfies Node[]
 }
 
 export function buildMarkdownEditorCanvasNodes(args: {

@@ -3,6 +3,9 @@
 import type { ModelConfig } from '../types'
 import type { RuntimeModelCatalogEntry } from '../../shared/model-variants'
 import { extractMcpServerNamesFromConfig } from '../../shared/mcp-config'
+import { AUTO_MODEL_ID, AUTO_MODEL_PROVIDER, autoModelSelection, isAutoModelSelection } from '../../shared/model-auto'
+
+export { AUTO_MODEL_ID, AUTO_MODEL_PROVIDER, autoModelSelection, isAutoModelSelection }
 
 export function modelConfigFromAssetValue(value: unknown): ModelConfig | null {
     if (typeof value !== 'string') {
@@ -45,6 +48,13 @@ export function resolveImportedModel(
     const requested = typeof model === 'object' && model
         ? model
         : modelConfigFromAssetValue(model)
+
+    if (isAutoModelSelection(requested)) {
+        return {
+            model: autoModelSelection(),
+            modelPlaceholder: null,
+        }
+    }
 
     if (!requested) {
         return {

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import {
     buildAssetCardMap,
     buildMcpServerMap,
+    isAutoModelSelection,
     resolvePerformerPresentation,
     resolvePerformerRuntimeConfig,
 } from '../lib/performers'
@@ -46,9 +47,9 @@ export function usePerformerPresentation(
     )
 
     const { data: runtimeTools } = useRuntimeTools(
-        runtimeConfig?.model || null,
+        runtimeConfig?.model && !isAutoModelSelection(runtimeConfig.model) ? runtimeConfig.model : null,
         runtimeConfig?.mcpServerNames || [],
-        (opts?.enableTools ?? true) && !!runtimeConfig,
+        (opts?.enableTools ?? true) && !!runtimeConfig && !isAutoModelSelection(runtimeConfig.model),
     )
 
     return { presentation, runtimeConfig, runtimeTools }

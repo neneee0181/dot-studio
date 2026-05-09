@@ -24,7 +24,9 @@ import { publishProjectionConsumed } from '../runtime-execution-events.js'
 import { StudioValidationError, unwrapOpencodeResult } from '../../lib/opencode-errors.js'
 import { retryOnAgentRegistryMiss } from '../../lib/opencode-prompt.js'
 import { buildActToolMap, ensureActToolFiles } from './act-tool-files.js'
-import { assertRuntimeModelPromptable } from '../../lib/model-catalog.js'
+import { assertRuntimeModelPromptable, listRuntimeModels } from '../../lib/model-catalog.js'
+import { selectAutoRuntimeModel } from '../../lib/auto-model-selection.js'
+import { isAutoModelSelection } from '../../../shared/model-auto.js'
 
 // Module-level session queue (one per thread)
 const sessionQueues: Map<string, SessionQueue> = new Map()
@@ -331,7 +333,24 @@ async function injectWakeTarget(
         let projectedTools: Record<string, boolean> | undefined
 
         if (performerConfig?.model) {
-            await assertRuntimeModelPromptable(threadManager.workingDir, performerConfig.model)
+            const effectiveModel = isAutoModelSelection(performerConfig.model)
+                ? selectAutoRuntimeModel({
+                    message: prompt,
+                    models: await listRuntimeModels(threadManager.workingDir),
+                    requiresToolCall: true,
+                })
+                : performerConfig.model
+            if (!effectiveModel) {
+                throw new StudioValidationError(
+                    'Auto model could not find a connected model that can run this wake-up request. Connect a compatible provider model or choose a specific model.',
+                    'choose_model',
+                )
+            }
+            const effectiveModelVariant = isAutoModelSelection(performerConfig.model)
+                ? null
+                : performerConfig.modelVariant
+
+            await assertRuntimeModelPromptable(threadManager.workingDir, effectiveModel)
             // Full performer projection — same as sendStudioChatMessage path
             try {
                 const { ensurePerformerProjection } = await import(
@@ -343,8 +362,8 @@ async function injectWakeTarget(
                     performerName: performerConfig.performerName,
                     talRef: performerConfig.talRef,
                     danceRefs: performerConfig.danceRefs,
-                    model: performerConfig.model,
-                    modelVariant: performerConfig.modelVariant,
+                    model: effectiveModel,
+                    modelVariant: effectiveModelVariant,
                     mcpServerNames: performerConfig.mcpServerNames,
                     workingDir: threadManager.workingDir,
                 }))
@@ -382,10 +401,10 @@ async function injectWakeTarget(
                     ...buildActToolMap(),
                 }
                 modelOverride = {
-                    providerID: performerConfig.model.provider,
-                    modelID: performerConfig.model.modelId,
+                    providerID: effectiveModel.provider,
+                    modelID: effectiveModel.modelId,
                 }
-                serverDebug('wake-cascade', `Performer projection done for "${participantKey}" model=${performerConfig.model.modelId}`)
+                serverDebug('wake-cascade', `Performer projection done for "${participantKey}" model=${effectiveModel.modelId}`)
             } catch (projErr) {
                 console.warn(`[wake-cascade] Performer projection failed for "${participantKey}", falling back to generic tools:`, projErr)
                 // Fallback: write generic Act tools only.

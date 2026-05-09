@@ -13,6 +13,7 @@ import Tip from './Tip'
 import type { ActEditorTab } from '../../store/types'
 import type { PerformerNode, WorkspaceAct } from '../../types'
 import { resolvePerformerFromActBinding } from '../../lib/act-participants'
+import { isAutoModelSelection } from '../../lib/performers'
 
 type ParticipantModelDropRowProps = {
     act: WorkspaceAct
@@ -33,13 +34,14 @@ function ParticipantModelDropRow({
 }: ParticipantModelDropRowProps) {
     const performer = resolvePerformerFromActBinding(performers, act.participants[participantKey])
     const label = resolveActParticipantLabel(act, participantKey, performers)
+    const isAutoModel = isAutoModelSelection(performer?.model)
     const modelLabel = performer?.model
-        ? performer.model.modelId
+        ? isAutoModel ? 'Auto' : performer.model.modelId
         : performer
             ? 'Drop model here'
             : 'No matching performer'
     const modelTitle = performer?.model
-        ? `${performer.model.provider} / ${performer.model.modelId}`
+        ? isAutoModel ? 'Auto model selection' : `${performer.model.provider} / ${performer.model.modelId}`
         : performer
             ? 'Drop a model from Asset Library onto this participant'
             : 'Resolve this participant binding before assigning a model'

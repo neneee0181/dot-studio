@@ -66,6 +66,18 @@ function hasPositiveInputCost(model: ProviderModelRecord) {
     return typeof cost.input === 'number' && cost.input > 0
 }
 
+function readModelCost(model: ProviderModelRecord) {
+    const cost = asRecord(model.cost)
+    const input = typeof cost.input === 'number' ? cost.input : undefined
+    const output = typeof cost.output === 'number' ? cost.output : undefined
+    return input === undefined && output === undefined
+        ? undefined
+        : {
+            ...(input !== undefined ? { input } : {}),
+            ...(output !== undefined ? { output } : {}),
+        }
+}
+
 function normalizeProviderSnapshot(
     provider: ProviderListEntry,
     connectedProviderIds: ReadonlySet<string>,
@@ -265,6 +277,7 @@ export async function listRuntimeModels(cwd: string): Promise<RuntimeModelCatalo
                 reasoning: readCapabilityFlag(record, 'reasoning'),
                 attachment: readCapabilityFlag(record, 'attachment'),
                 temperature: readCapabilityFlag(record, 'temperature'),
+                ...(readModelCost(record) ? { cost: readModelCost(record) } : {}),
                 modalities: readModalities(record),
                 variants: normalizeRuntimeVariants(record.variants),
             })

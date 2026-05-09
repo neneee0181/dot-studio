@@ -13,6 +13,7 @@ import type { PerformerNode } from '../../types'
 import { parseStudioSessionTitle } from '../../../shared/session-metadata'
 import type { FocusSnapshot } from '../../store/types'
 import { resolveNodeBaselineHidden } from '../../lib/focus-utils'
+import { isAutoModelSelection } from '../../lib/performers'
 
 // ── Types ───────────────────────────────────────────────
 
@@ -189,7 +190,7 @@ export function buildThreadRows(args: {
         id: performer.id,
         kind: 'performer',
         label: performer.name,
-        meta: performer.model?.modelId || 'No model selected',
+        meta: isAutoModelSelection(performer.model) ? 'Auto' : performer.model?.modelId || 'No model selected',
         hidden: resolveNodeBaselineHidden(args.focusSnapshot, performer.id, 'performer', !!performer.hidden),
         active: (args.selectedPerformerId === performer.id) || (args.editingTarget?.type === 'performer' && args.editingTarget.id === performer.id),
         children: args.performerSessionsById.get(performer.id) || [],

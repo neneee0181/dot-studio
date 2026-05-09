@@ -134,6 +134,7 @@ Before execution:
 - Act collaboration context is turn-scoped system prompt context
 - performer variant ownership belongs to projection and runtime config
 - prompt execution validates known provider/auth-incompatible model selections before calling OpenCode; Act auto-wakes should surface a model-selection error and open the participant circuit instead of streaming a doomed run
+- performer model `studio-auto/auto` is resolved at the execution boundary against connected provider models; simple requests prefer the cheapest compatible model, while tool, attachment, and more complex requests require matching capabilities before projection and prompt execution continue
 - synced message metadata is display-only and must not become the execution source of truth
 
 ## Review And Wake Rules

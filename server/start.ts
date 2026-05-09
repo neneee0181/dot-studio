@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { STUDIO_API_PORT, STUDIO_OPENCODE_PORT, STUDIO_VITE_PORT } from '../shared/default-ports.js'
 import { resolvePackageBinCommand } from './lib/package-bin.js'
 
@@ -121,7 +121,7 @@ function withNodeImport(commandSpec: CommandSpec, importPath: string | null): Co
     }
     return {
         command: commandSpec.command,
-        args: ['--import', importPath, ...commandSpec.args],
+        args: ['--import', pathToFileURL(importPath).href, ...commandSpec.args],
     }
 }
 
